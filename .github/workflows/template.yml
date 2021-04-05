@@ -34,6 +34,9 @@ jobs:
           SAFE_ACTOR=$(echo $ACTOR | sed 's/[^a-zA-Z0-9]//g' | tr '[:upper:]' '[:lower:]')
           GROUP="com.github.$SAFE_ACTOR.$SAFE_NAME"
 
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
           npm install -g @vue/cli
           cargo install tauri-bundler
 
