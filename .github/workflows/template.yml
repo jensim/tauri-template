@@ -52,7 +52,7 @@ jobs:
           rm -rf .github/workflows
           mv .github/template_workflows .github/workflows
           git add -A
-          git commit -m "Set up workdlow"
+          git commit -m "Set up workflow"
       # Push changes
       - name: Push changes
         uses: ad-m/github-push-action@master
