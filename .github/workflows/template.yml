@@ -44,7 +44,7 @@ jobs:
           mv "$SAFE_NAME"/* ./
           rm -r "$SAFE_NAME"
           git add -A
-          git commit -m "Generate vue tauri app"
+          git commit -m "Generate vue app"
 
           vue add tauri --ci
           git add -A
