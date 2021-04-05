@@ -14,8 +14,18 @@ jobs:
 
       - name: Checkout Sources
         uses: actions/checkout@v2
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14'
       - name: Template
+        shell: bash
         run: |
+          set -ex
+
           # Prepare variables
           NAME="${GITHUB_REPOSITORY##*/}"
           ACTOR=$(echo $GITHUB_ACTOR | tr '[:upper:]' '[:lower:]')
@@ -23,9 +33,10 @@ jobs:
           SAFE_ACTOR=$(echo $ACTOR | sed 's/[^a-zA-Z0-9]//g' | tr '[:upper:]' '[:lower:]')
           GROUP="com.github.$SAFE_ACTOR.$SAFE_NAME"
 
-          yarn global add @vue/cli
+          npm install -g @vue/cli
           cargo install tauri-bundler
-          vue create --default --packageManager yarn --no-git "$SAFE_NAME"
+
+          vue create --default --packageManager npm --no-git "$SAFE_NAME"
           mv "$SAFE_NAME"/* ./
           mv "$SAFE_NAME"/.gitignore .gitignore
           rm -r "$SAFE_NAME"/
