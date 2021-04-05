@@ -39,8 +39,7 @@ jobs:
 
           vue create --default --packageManager npm --no-git "$SAFE_NAME"
           mv "$SAFE_NAME"/* ./
-          mv "$SAFE_NAME"/.gitignore .gitignore
-          rm -r "$SAFE_NAME"/
+          rm -r "$SAFE_NAME"
           git add -A
           git commit -m "Generate vue tauri app"
 
