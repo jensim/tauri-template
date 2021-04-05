@@ -50,11 +50,10 @@ jobs:
           git add -A
           git commit -m "Added vue tauri"
 
-          # Replace workflows
-          rm -rf .github/workflows
-          mv .github/template_workflows .github/workflows
+          # Remove template workflow
+          rm -f .github/workflows/template.yml
           git add -A
-          git commit -m "Set up workflow"
+          git commit -m "Remove template workflow"
       # Push changes
       - name: Push changes
         uses: ad-m/github-push-action@master
