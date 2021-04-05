@@ -25,6 +25,7 @@ jobs:
         shell: bash
         run: |
           set -ex
+          shopt -s dotglob nullglob
 
           # Prepare variables
           NAME="${GITHUB_REPOSITORY##*/}"
@@ -40,18 +41,18 @@ jobs:
           mv "$SAFE_NAME"/* ./
           mv "$SAFE_NAME"/.gitignore .gitignore
           rm -r "$SAFE_NAME"/
+          git add -A
+          git commit -m "Generate vue tauri app"
+
           vue add tauri --ci
+          git add -A
+          git commit -m "Added vue tauri"
 
           # Replace workflows
           rm -rf .github/workflows
           mv .github/template_workflows .github/workflows
-      # Commit modified files
-      - name: Commit files
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
           git add -A
-          git commit -m "Template cleanup"
+          git commit -m "Set up workdlow"
       # Push changes
       - name: Push changes
         uses: ad-m/github-push-action@master
