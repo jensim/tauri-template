@@ -11,7 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.repository.name != 'tauri-template'
     steps:
-
       - name: Checkout Sources
         uses: actions/checkout@v2
       - name: Install Rust
@@ -38,7 +37,7 @@ jobs:
           git config --local user.name "GitHub Action"
 
           npm install -g @vue/cli
-          cargo install tauri-bundler
+          #cargo install tauri-bundler
 
           vue create --default --packageManager npm --no-git "$SAFE_NAME"
           mv "$SAFE_NAME"/* ./
@@ -47,11 +46,14 @@ jobs:
           git commit -m "Generate vue app"
 
           vue add tauri --ci
+          cargo fmt --verbose --manifest-path src-tauri/Cargo.toml
           git add -A
           git commit -m "Added vue tauri"
 
           # Remove template workflow
           rm -f .github/workflows/template.yml
+          sed -i "s|tauri-template|$SAFE_NAME|g" README.md
+
           git add -A
           git commit -m "Remove template workflow"
       # Push changes
@@ -60,3 +62,13 @@ jobs:
         with:
           branch: main
           github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Trigger build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -fv \
+            -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -u "$GITHUB_ACTOR:$GITHUB_TOKEN"
+            -d '{"ref":"refs/heads/main"}' \
+            "https://api.github.com/repos/$GITHUB_ACTOR/$GITHUB_REPOSITORY/actions/workflows/build.yml/dispatches"
