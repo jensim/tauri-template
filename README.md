@@ -1,24 +1,16 @@
-# tauritemplate
+# tauri-template
 
-## Project setup
-```
-yarn install
-```
 
-### Compiles and hot-reloads for development
-```
-yarn serve
-```
+[![Build](https://github.com/jensim/tauri-template/actions/workflows/build.yml/badge.svg)](https://github.com/jensim/tauri-template/actions/workflows/build.yml)
 
-### Compiles and minifies for production
-```
-yarn build
-```
+## TODOs
+* [x] Template the repo
+* [ ] Build a green build
 
-### Lints and fixes files
-```
-yarn lint
-```
+## Getting started & Prerequisites
+https://tauri.studio/en/docs/getting-started/intro/
 
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+## Serve application
+```shell
+npm run tauri:serve
+```
