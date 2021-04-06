@@ -36,10 +36,10 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
-          npm install -g @vue/cli
+          yarn global add @vue/cli
           cargo install tauri-bundler
 
-          vue create --default --packageManager npm --no-git "$SAFE_NAME"
+          vue create --default --packageManager yarn --no-git "$SAFE_NAME"
           mv "$SAFE_NAME"/* ./
           rm -r "$SAFE_NAME"
           git add -A
