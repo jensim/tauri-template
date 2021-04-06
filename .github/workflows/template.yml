@@ -1,7 +1,7 @@
 name: Template
 on:
   schedule:
-    - '45 0 * * SAT'
+    - cron: '45 0 * * SAT'
   workflow_dispatch:
 
 jobs:
