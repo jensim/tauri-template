@@ -37,7 +37,7 @@ jobs:
           git config --local user.name "GitHub Action"
 
           npm install -g @vue/cli
-          #cargo install tauri-bundler
+          cargo install tauri-bundler
 
           vue create --default --packageManager npm --no-git "$SAFE_NAME"
           mv "$SAFE_NAME"/* ./
