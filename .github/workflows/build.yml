@@ -13,6 +13,7 @@ jobs:
     if: github.event.repository.name != 'tauri-template'
     steps:
       - uses: actions/checkout@v2
+      - name: Template the build script
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
