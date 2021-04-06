@@ -1,0 +1,196 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  lint_node:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install vue cli
+        run: |
+          sudo npm install -g @vue/cli
+          npm install
+      - name: Node Lint
+        run: npm run lint
+  lint_fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          components: rustfmt
+      - uses: actions/checkout@v2
+      - name: Rust format
+        run: cargo fmt --manifest-path ./src-tauri/Cargo.toml -- --check
+  lint_clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install deps
+        run: sudo apt-get install libdbus-glib-1-dev build-essential libgtk-3-dev libwebkit2gtk-4.0-dev
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          components: clippy
+      - uses: actions/checkout@v2
+      - name: Rust clippy
+        run: cargo clippy --manifest-path ./src-tauri/Cargo.toml
+  build:
+    name: Build release
+    needs:
+      - lint_node
+      - lint_fmt
+      - lint_clippy
+    runs-on: ${{ matrix.os }}-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ macos, ubuntu, windows ]
+        include:
+          - os: macos
+            PKG: "*_*64.dmg"
+            PKG_DIR: dmg
+          - os: ubuntu
+            PKG: "*_*_amd64.deb"
+            PKG_DIR: deb
+          - os: windows
+            PKG: "*_*64.msi"
+            PKG_DIR: msi
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install ubuntu packages
+        if: matrix.os == 'ubuntu'
+        run: |
+          sudo apt update && sudo apt install libwebkit2gtk-4.0-dev \
+            build-essential \
+            curl \
+            wget \
+            libssl-dev \
+            appmenu-gtk3-module \
+            libgtk-3-dev \
+            squashfs-tools
+      - name: Install MacOS packages
+        if: matrix.os == 'macos'
+        run: brew install tree
+      - name: Install Windows packages
+        if: matrix.os == 'windows'
+        shell: bash
+        run: choco install tree zip
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - name: Rust build
+        run: cargo build --manifest-path src-tauri/Cargo.toml --release
+      - name: Rust test
+        run: cargo test --manifest-path src-tauri/Cargo.toml --release
+      - name: NPM Install dependencies
+        run: npm install
+      - name: NPM Build
+        run: npm run build
+      - name: Install bundler
+        uses: actions-rs/install@v0.1
+        with:
+          crate: tauri-bundler
+      - name: Bundle
+        run: npm run tauri:build
+      - name: Tree view bundle
+        shell: bash
+        run: tree ./src-tauri/target/release/bundle/
+      - name: Zip package
+        shell: bash
+        run: |
+          cd src-tauri/target/release/bundle/${{ matrix.PKG_DIR }}
+          zip -9 my-artifact.zip ${{matrix.PKG}}
+          mv my-artifact.zip ../../../../../${{ matrix.os }}.zip
+          cd ../../../../..
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2.2.2
+        with:
+          name: ${{ matrix.os }}
+          path: ${{ matrix.os }}.zip
+          retention-days: 5
+          if-no-files-found: error
+
+  releaseDraft:
+    name: Release Draft
+    runs-on: ubuntu-latest
+    needs: [ build ]
+    steps:
+      # Remove old release drafts by using the curl request for the available releases with draft flag
+      - name: Download Artifacts
+        id: download_artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: /tmp/artifacts
+      - name: Create release body
+        run: |
+          echo "# build-${{ github.run_number }}" > '/tmp/RELEASE_BODY.md'
+          echo "" >> '/tmp/RELEASE_BODY.md'
+          echo "| File | checksum |" >> '/tmp/RELEASE_BODY.md'
+          echo "|-----|-----|" >> '/tmp/RELEASE_BODY.md'
+          for OS in macos ubuntu windows ; do
+            FILE_NAME="${OS}.zip"
+            FILE_PATH="/tmp/artifacts/${OS}/${OS}.zip"
+            CHECKSUM="$(shasum -a 256 "${FILE_PATH}" | sed 's| .*||')"
+            echo "| ${FILE_NAME} | ${CHECKSUM} |" >> '/tmp/RELEASE_BODY.md'
+          done
+      - name: Remove Old Release Drafts
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/repos/$GITHUB_REPOSITORY/releases \
+            | tr '\r\n' ' ' \
+            | jq '.[] | select(.draft == true) | .id' \
+            | xargs -I '{}' \
+          curl -X DELETE -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/repos/$GITHUB_REPOSITORY/releases/{}
+      - name: Create Release Draft
+        id: createDraft
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: build-${{ github.run_number }}
+          release_name: build-${{ github.run_number }}
+          body_path: /tmp/RELEASE_BODY.md
+          draft: true
+      # Upload artifacts
+      - name: Upload Ubuntu Asset
+        id: upload-ubuntu-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.createDraft.outputs.upload_url }}
+          asset_path: /tmp/artifacts/ubuntu/ubuntu.zip
+          asset_name: ubuntu.zip
+          asset_content_type: application/zip
+      - name: Upload MacOS Asset
+        id: upload-macos-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.createDraft.outputs.upload_url }}
+          asset_path: /tmp/artifacts/macos/macos.zip
+          asset_name: macos.zip
+          asset_content_type: application/zip
+      - name: Upload Windows Asset
+        id: upload-windows-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.createDraft.outputs.upload_url }}
+          asset_path: /tmp/artifacts/windows/windows.zip
+          asset_name: windows.zip
+          asset_content_type: application/zip
