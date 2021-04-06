@@ -1,10 +1,7 @@
 name: Template
 on:
-  push:
-    branches:
-      - main
-
-  # Allows you to run this workflow manually from the Actions tab
+  schedule:
+    - '45 0 * * SAT'
   workflow_dispatch:
 
 jobs:
@@ -12,7 +9,7 @@ jobs:
   template-cleanup:
     name: Template
     runs-on: ubuntu-latest
-    if: github.event.repository.name != 'tauri-template'
+    if: github.event.repository.name == 'tauri-template'
     steps:
       - name: Checkout Sources
         uses: actions/checkout@v2
@@ -27,7 +24,6 @@ jobs:
         shell: bash
         run: |
           set -ex
-          shopt -s dotglob nullglob
 
           # Prepare variables
           NAME="${GITHUB_REPOSITORY##*/}"
@@ -38,6 +34,14 @@ jobs:
 
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+
+          rm -rf *
+          cp -r .github/template ./
+
+          git add -A
+          git commit -m "Reset repo to empty base line"
+
+          shopt -s dotglob nullglob
 
           npm install -g @vue/cli
           cargo install tauri-bundler
@@ -65,13 +69,3 @@ jobs:
         with:
           branch: main
           github_token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Trigger build
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          curl -fv \
-            -X POST \
-            -H "Accept: application/vnd.github.v3+json" \
-            -u "$GITHUB_ACTOR:$GITHUB_TOKEN" \
-            -d '{"ref":"refs/heads/main"}' \
-            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/workflows/build.yml/dispatches"
