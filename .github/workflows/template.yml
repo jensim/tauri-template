@@ -71,4 +71,4 @@ jobs:
             -H "Accept: application/vnd.github.v3+json" \
             -u "$GITHUB_ACTOR:$GITHUB_TOKEN" \
             -d '{"ref":"refs/heads/main"}' \
-            "https://api.github.com/repos/$GITHUB_ACTOR/$GITHUB_REPOSITORY/actions/workflows/build.yml/dispatches"
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/workflows/build.yml/dispatches"
