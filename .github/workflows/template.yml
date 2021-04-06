@@ -23,7 +23,6 @@ jobs:
           git config --local user.name "GitHub Action"
 
           rm -rf .github/template
-          rm .github/workflows/template-self-destruct.yml
           rm .github/workflows/template.yml
 
           sed -i "s|jensim/tauri-template|$GITHUB_REPOSITORY|g" README.md
