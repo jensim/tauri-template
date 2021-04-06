@@ -7,5 +7,10 @@
 * [x] Template the repo
 * [ ] Build a green build
 
-## Getting started
+## Getting started & Prerequisites
 https://tauri.studio/en/docs/getting-started/intro/
+
+## Serve application
+```shell
+npm run tauri:serve
+```
