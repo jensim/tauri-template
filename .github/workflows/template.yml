@@ -19,6 +19,11 @@ jobs:
         run: |
           set -ex
 
+          NAME="${GITHUB_REPOSITORY##*/}"
+          if [ "$NAME" == tauri-template ] ; then
+            exit 0
+          fi
+
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
@@ -26,7 +31,6 @@ jobs:
           rm .github/workflows/template.yml
 
           sed -i "s|jensim/tauri-template|$GITHUB_REPOSITORY|g" README.md
-          NAME="${GITHUB_REPOSITORY##*/}"
           sed -i "s|^# tauri-template$|# $NAME|g" README.md
           SAFE_NAME=$(echo $NAME | sed 's/[^a-zA-Z0-9]//g' | tr '[:upper:]' '[:lower:]')
           sed -i "s|\"tauritemplate\"|\"${SAFE_NAME}\"|g" package.json
